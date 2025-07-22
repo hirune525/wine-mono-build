@@ -1,16 +1,19 @@
 # Dockerfile
 FROM ubuntu:22.04
 
-# 文字化け防止
-ENV LANG=ja_JP.UTF-8 \
-    LANGUAGE=ja_JP:ja \
-    LC_ALL=ja_JP.UTF-8
-
 # 非対話モードで apt を使う
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Wine 用の i386 アーキテクチャ追加
 RUN dpkg --add-architecture i386
+
+# 文字化け防止
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        language-pack-ja \
+        locales && \
+    locale-gen ja_JP.UTF-8 && \
+    update-locale LANG=ja_JP.UTF-8
 
 # https で apt を使うための前提パッケージ
 RUN apt-get update && \
