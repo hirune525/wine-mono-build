@@ -21,7 +21,7 @@ RUN apt-get update && \
 
 # Mono 公式リポジトリを登録
 RUN wget https://download.mono-project.com/repo/xamarin.gpg -O /usr/share/keyrings/mono-official.asc && \
-    echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/mono-official.asc] https://download.mono-project.com/repo/ubuntu stable-jammy main" \
+    echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/mono-official.asc] https://download.mono-project.com/repo/ubuntu stable jammy main" \
     > /etc/apt/sources.list.d/mono-official-stable.list
 
 # 必要パッケージを一括インストール
