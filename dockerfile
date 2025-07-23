@@ -43,5 +43,9 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# ソースをコピー
+WORKDIR /usr/local/src
+COPY . /src
+
 # デフォルトシェル
 CMD ["/bin/bash"]
