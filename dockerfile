@@ -36,9 +36,9 @@ RUN wget https://download.mono-project.com/repo/xamarin.gpg -O /usr/share/keyrin
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         git \
-        "mono-complete=8.*" \
-        "msbuild=${VS_VERSION}.*" \
-        "nuget=6.*" \
+        mono-complete \
+        msbuild \
+        nuget \
         referenceassemblies-pcl \
         wine64 \
         wine32 \
