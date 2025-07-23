@@ -1,10 +1,8 @@
 # Dockerfile
 FROM ubuntu:22.04
 
-# Visual Studio version
-ARG VS_VERSION=17.9
-# VSTest version (パッチ番号は固定)
-ARG VSTEST_VERSION=${VS_VERSION}.0
+# VSTest version
+ENV VSTEST_VERSION=17.14.1
 
 # 非対話モードで apt を使う
 ENV DEBIAN_FRONTEND=noninteractive
@@ -20,6 +18,11 @@ RUN apt-get update && \
     locale-gen ja_JP.UTF-8 && \
     update-locale LANG=ja_JP.UTF-8
 
+# 個別環境の文字コード設定
+ENV LANG=ja_JP.UTF-8 \
+    LANGUAGE=ja_JP:ja \
+    LC_ALL=ja_JP.UTF-8
+
 # https で apt を使うための前提パッケージ
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -27,10 +30,9 @@ RUN apt-get update && \
         gnupg \
         wget
 
-# Mono 公式リポジトリを登録 (VS2022相当の環境が必要なのでpreview版)
-RUN wget https://download.mono-project.com/repo/xamarin.gpg -O /usr/share/keyrings/mono-official.asc && \
-    echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/mono-official.asc] https://download.mono-project.com/repo/ubuntu preview jammy main" \
-    > /etc/apt/sources.list.d/mono-official-preview.list
+# Mono 公式リポジトリを登録
+RUN gpg --homedir /tmp --no-default-keyring --keyring /usr/share/keyrings/mono-official-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && \
+    echo "deb [signed-by=/usr/share/keyrings/mono-official-archive-keyring.gpg] https://download.mono-project.com/repo/ubuntu stable-focal main" | tee /etc/apt/sources.list.d/mono-official-stable.list
 
 # 必要パッケージを一括インストール
 RUN apt-get update && \
@@ -38,6 +40,7 @@ RUN apt-get update && \
         git \
         mono-complete \
         msbuild \
+        mono-roslyn \
         nuget \
         referenceassemblies-pcl \
         wine64 \
@@ -49,16 +52,20 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# VS Test Platform (vstest.console) を取得
-RUN wget -q https://github.com/microsoft/vstest/releases/download/v${VSTEST_VERSION}/vstest.${VSTEST_VERSION}.zip -O /tmp/vstest.zip && \
-    unzip /tmp/vstest.zip -d /opt/vstest && \
-    rm /tmp/vstest.zip && \
-    echo '#!/bin/bash\nexec mono /opt/vstest/vstest.console.exe "$@"' > /usr/local/bin/vstest.console && \
-    chmod +x /usr/local/bin/vstest.console
-
 # ソースをコピー
 WORKDIR /usr/local/src
 COPY src/ .
+
+# VS Test Platform (vstest.console) をnugetから取得してmono上で実行できるようにする
+RUN mkdir -p /opt/vstest && \
+    nuget install Microsoft.TestPlatform -Version ${VSTEST_VERSION} -OutputDirectory /opt/vstest && \
+    { \
+        echo '#!/bin/bash'; \
+        echo 'set -e'; \
+        echo 'VSTEST_DIR=/opt/vstest/Microsoft.TestPlatform.${VSTEST_VERSION}/tools/net462/Common7/IDE/Extensions/TestPlatform'; \
+        echo 'exec mono "${VSTEST_DIR}/vstest.console.exe" "$@"'; \
+    } > /usr/local/bin/vstest.console && \
+    chmod +x /usr/local/bin/vstest.console
 
 # デフォルトシェル
 CMD ["/bin/bash"]
