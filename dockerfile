@@ -45,7 +45,7 @@ RUN apt-get update && \
 
 # ソースをコピー
 WORKDIR /usr/local/src
-COPY . /src
+COPY src/ .
 
 # デフォルトシェル
 CMD ["/bin/bash"]
